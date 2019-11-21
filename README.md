@@ -29,6 +29,13 @@ Command line implementations:
 
 `python FloodSeverityIndex.py data thresholds bounding_box year`
 
+or
+
+```
+docker run -ti mintproject/floodseverityindex:latest bash
+python FloodSeverityIndex.py data thresholds bounding_box year
+```
+
 where:
 * data: Path to the folder containing the GloFAS data. Data should be organized in folders per year.
 * thresholds: path to the file containing the  flood threshold  from the Gumbel distribution.
