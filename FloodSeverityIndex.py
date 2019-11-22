@@ -35,7 +35,7 @@ def openDatasets(data,thresholds,year,bounding_box):
         time (numpy array): time vector
     '''
     # path + folders
-    path = data+'/GlofasClim/'+str(year)
+    path = data+'/'+str(year)
     nc_files = (glob.glob(path+'/*.nc'))
     file_names=[]
     for file in nc_files:
