@@ -15,6 +15,14 @@ import glob as glob
 from datetime import date
 import sys
 import ast
+import pandas as pd
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+import os
+import imageio
+import matplotlib.ticker as mticker
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 def openDatasets(data,thresholds,year,bounding_box):
     '''Open the thresholds and GloFAS datasets for the appropriate year
@@ -35,7 +43,7 @@ def openDatasets(data,thresholds,year,bounding_box):
         time (numpy array): time vector
     '''
     # path + folders
-    path = data+'/GlofasClim/'+str(year)
+    path = data+'/'+str(year)
     nc_files = (glob.glob(path+'/*.nc'))
     file_names=[]
     for file in nc_files:
@@ -136,18 +144,83 @@ def writeNetcdf(flood_bool, lat, lon, time, year):
     ds.attrs['time_coverage_start'] = str(ds.time.values[0])
     ds.attrs['time_coverage_end'] = str(ds.time.values[-1])
     ds.attrs['time_coverage_resolution'] = 'daily'
+    
+    if os.path.isdir('./results') is False:
+        os.makedirs('./results')
 
-    ds.to_netcdf('GloFAS_FloodIndex_'+str(year)+'.nc')
+    ds.to_netcdf('./results/GloFAS_FloodIndex_'+str(year)+'.nc')
 
+def visualizeFlood(allflood, lat, lon, alltime):
+    proj = ccrs.PlateCarree()
+    idx = np.size(alltime)
+    count = list(np.arange(0,idx,1))
+    filenames =[]
+
+    #Make a directory for results/figures if it doesn't exit
+    if os.path.isdir('./figures') is False:
+        os.makedirs('./figures')
+    if os.path.isdir('./results') is False:
+        os.makedirs('./results')
+    
+    for i in count:
+        v = allflood[i,:,:]
+        date = pd.to_datetime(alltime[i]).strftime("%d %B %Y")  
+        fig,ax = plt.subplots(figsize=[15,10])
+        ax = plt.axes(projection=proj)
+        ax.add_feature(cfeature.BORDERS)
+        ax.add_feature(cfeature.COASTLINE)
+        ax.add_feature(cfeature.RIVERS)
+        img = plt.contourf(lon, lat, v, [0,1,2,3,4],
+            colors = ['white','orange','#FF4500','#B22222'],               
+            transform=proj)
+        cbar = plt.colorbar(img, orientation='horizontal',pad=0.1)
+        cbar.ax.set_title('Flood Severity Index')
+        cbar.ax.set_xticklabels(['None','Medium','High','Severe',''])
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                      linewidth=2, color='gray', alpha=0.5, linestyle='--')
+        gl.xlabels_top = False
+        gl.ylabels_right = False
+        gl.xlines = False
+        gl.ylines = False
+        gl.xlocator = mticker.FixedLocator(np.linspace(np.round(np.min(lon)),np.round(np.max(lon)),5))
+        gl.ylocator = mticker.FixedLocator(np.linspace(np.round(np.min(lat)),np.round(np.max(lat)),5))
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
+        gl.xlabel_style = {'size': 12, 'color': 'gray'}
+        gl.ylabel_style = {'size': 12, 'color': 'gray'}
+        #Add a title with time
+        plt.title(date, fontsize=18, loc='left', pad=1)
+        #save a jepg
+        filename = './figures/flooding_t'+str(date)+'.jpeg'
+        filenames.append(filename)
+        plt.savefig(filename)
+        plt.close(fig)
+    
+    #create a gif
+    writer = imageio.get_writer('./results/Flooding_index.mp4', fps=5)
+    for filename in filenames:
+        writer.append_data(imageio.imread(filename))
+    writer.close()
+    
 if __name__ == "__main__":
     #params
     bounding_box = ast.literal_eval(sys.argv[3])
     year = ast.literal_eval(sys.argv[4])
     thresholds = sys.argv[2]
     data = sys.argv[1]
+    fig = ast.literal_eval(sys.argv[5])
 
     #Run the functions in a row
+    
     for y in year:
         val, Q2, Q5, Q20, lat, lon, time = openDatasets(data,thresholds,y,bounding_box)
         flood_bool = calculateIndex(val, Q2, Q5, Q20, lat, lon, time)
         writeNetcdf(flood_bool, lat, lon, time, y)
+        if fig  == True:
+            try: allflood = np.concatenate((allflood,flood_bool),axis=0)
+            except NameError: allflood = flood_bool
+            try: alltime = np.concatenate((alltime,time),axis=0)
+            except NameError: alltime = time
+    
+    if fig == True:
+        visualizeFlood(allflood, lat, lon, alltime)
