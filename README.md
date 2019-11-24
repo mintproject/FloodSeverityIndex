@@ -51,7 +51,7 @@ where:
 3: severe (20-yr return period)  
 
 Examples:
-`FloodSeverityIndex.py ./ GloFAS_FloodThreshold.nc [23,48,3,15] [2016,2017]  True`
+`python FloodSeverityIndex.py ./ GloFAS_FloodThreshold.nc [23,48,3,15] [2016,2017]  True`
 
 ## <a name = "req">Requirements</a>
 Tested under Python 3.7
