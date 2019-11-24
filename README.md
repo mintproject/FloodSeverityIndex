@@ -27,7 +27,7 @@ This routine requires data from GloFAS.
 
 Command line implementations:
 
-`python FloodSeverityIndex.py data thresholds bounding_box year`
+`python FloodSeverityIndex.py data thresholds bounding_box year fig`
 
 or
 
@@ -41,6 +41,7 @@ where:
 * thresholds: path to the file containing the  flood threshold  from the Gumbel distribution.
 * bounding_box: List of [min_lon,max_lon,min_lat,max_lat]. Note that only South Sudan and Ethiopia are currently supported. Therefore the maximum extent of the box is: [23,48,3,15]
 * year: The year of interest. Should be provided as a list for multiple years.
+* fig: whether to return a  movie
 
 **Note**:
 - The outputs are in netcdf format. The  index is a boolean corresponding  to the severity of the flood:  
@@ -50,14 +51,20 @@ where:
 3: severe (20-yr return period)  
 
 Examples:
-`FloodSeverityIndex.py ./ GloFAS_FloodThreshold.nc [23,48,3,15] [2016,2017]`
+`FloodSeverityIndex.py ./ GloFAS_FloodThreshold.nc [23,48,3,15] [2016,2017]  True`
 
 ## <a name = "req">Requirements</a>
 Tested under Python 3.7
 
 Package requirements:
-* xarray
+* xarray = 0.12.1 (Do not update to the latest version)
 * numpy
+* cartopy
+* panda
+* matplotlib
+* imageio
+
+Note: To use mp4, after installing imegeio, `pip install imageio-ffmpeg`
 
 ## <a name = "files">Files in this directory</a>
 
