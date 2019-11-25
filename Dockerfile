@@ -1,6 +1,6 @@
 FROM continuumio/miniconda3
 
-RUN conda install -c conda-forge -y
+RUN conda install -c conda-forge -y \
         cartopy \
 	   && conda install -y \
         xarray=0.12.1 \
