@@ -1,0 +1,7 @@
+version: '3'
+services:
+  dev:
+    image: "mintproject/floodseverityindex:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile
