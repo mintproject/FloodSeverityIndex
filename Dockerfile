@@ -1,13 +1,7 @@
 FROM continuumio/miniconda3
 
-RUN conda install -c conda-forge -y \
-        cartopy \
-	   && conda install -y \
-        xarray=0.12.1 \
-        numpy \
-        pandas \
-        matplotlib \
-        imageio
+ADD environment.yml .
+RUN conda install --file environment.yml
 
 RUN apt update && apt install -y unzip zip
 
