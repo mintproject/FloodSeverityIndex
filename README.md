@@ -33,15 +33,17 @@ or
 
 ```
 docker run -ti mintproject/floodseverityindex:latest bash
-python FloodSeverityIndex.py data thresholds bounding_box year
+python FloodSeverityIndex.py data thresholds bounding_box year fig
 ```
 
 where:
-* data: Path to the folder containing the GloFAS data. Data should be organized in folders per year.
+* data: Either:
+  - Path to the folder containing the GloFAS data. Data should be organized in folders per year.
+  - Path to single netcdf file with concatenated data for South Sudan and Ethiopia
 * thresholds: path to the file containing the  flood threshold  from the Gumbel distribution.
 * bounding_box: List of [min_lon,max_lon,min_lat,max_lat]. Note that only South Sudan and Ethiopia are currently supported. Therefore the maximum extent of the box is: [23,48,3,15]
-* year: The year of interest. Should be provided as a list for multiple years.
-* fig: whether to return a  movie
+* year: The year of interest. Should be provided as a list to support for multiple years.
+* fig: whether to return a movie
 
 **Note**:
 - The outputs are in netcdf format. The  index is a boolean corresponding  to the severity of the flood:  

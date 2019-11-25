@@ -24,6 +24,48 @@ import imageio
 import matplotlib.ticker as mticker
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
+def openDataset(data, thresholds, year, bounding_box):
+    ''' Open the thresholds and GloFAS concatenated dataset for the appropriate year
+
+    Args:
+        data (str): path to GloFAS in netcdf format. All years in one file
+        thresholds (str): Name of the netcdf file containing the thresholds data
+        year (list): year to consider
+        bounding_box (list): min_lon, max_lon, min_lat, max_lat
+
+    Returns:
+        val (numpy array): Q values cut to the bounding box
+        Q2 (numpy array): Threshold Q for a 2-yr flood
+        Q5 (numpy array): Theshold Q for a 5-yr flood
+        Q20 (numpy array): Threshold Q for a 20-yr flood
+        lat (numpy array): latitude vector
+        lon (numpy array): longitude vector
+        time (numpy array): time vector
+    '''
+    data = xr.open_dataset(data)
+    min_year = np.min(year)
+    min_time = str(min_year)+'-01-01T00:00:00.000000000'
+    max_year = np.max(year)
+    max_time = str(max_year)+'-12-31T00:00:00.000000000'
+    p_ = data.sel(lat=slice(bounding_box[3], bounding_box[2]),\
+                  lon=slice(bounding_box[0],bounding_box[1]),
+                  time = slice(min_time,max_time))
+    val = p_.dis24.values
+    #open thresholds
+    thres = xr.open_dataset(thresholds)
+    t_ = thres.sel(lat=slice(bounding_box[3], bounding_box[2]),\
+                  lon=slice(bounding_box[0],bounding_box[1]))
+    Q5 = t_['Q_5'].values
+    Q2 = t_['Q_2'].values
+    Q20 = t_['Q_20'].values
+
+    lat = p_['lat'].values
+    lon = p_['lon'].values
+    time = p_['time'].values
+
+    return val, Q2, Q5, Q20, lat, lon, time
+    
+
 def openDatasets(data,thresholds,year,bounding_box):
     '''Open the thresholds and GloFAS datasets for the appropriate year
 
@@ -211,16 +253,23 @@ if __name__ == "__main__":
     fig = ast.literal_eval(sys.argv[5])
 
     #Run the functions in a row
-    
-    for y in year:
-        val, Q2, Q5, Q20, lat, lon, time = openDatasets(data,thresholds,y,bounding_box)
+    if data.endswith('.nc')==True:
+        val, Q2, Q5, Q20, lat, lon, time = openDataset(data,thresholds,year,bounding_box)
         flood_bool = calculateIndex(val, Q2, Q5, Q20, lat, lon, time)
-        writeNetcdf(flood_bool, lat, lon, time, y)
-        if fig  == True:
-            try: allflood = np.concatenate((allflood,flood_bool),axis=0)
-            except NameError: allflood = flood_bool
-            try: alltime = np.concatenate((alltime,time),axis=0)
-            except NameError: alltime = time
+        writeNetcdf(flood_bool, lat, lon, time, 'all')
+        if fig == True:
+            visualizeFlood(flood_bool, lat, lon, time)
+
+    else:    
+        for y in year:
+            val, Q2, Q5, Q20, lat, lon, time = openDatasets(data,thresholds,y,bounding_box)
+            flood_bool = calculateIndex(val, Q2, Q5, Q20, lat, lon, time)
+            writeNetcdf(flood_bool, lat, lon, time, y)
+            if fig  == True:
+                try: allflood = np.concatenate((allflood,flood_bool),axis=0)
+                except NameError: allflood = flood_bool
+                try: alltime = np.concatenate((alltime,time),axis=0)
+                except NameError: alltime = time
     
-    if fig == True:
-        visualizeFlood(allflood, lat, lon, alltime)
+            if fig == True:
+                visualizeFlood(allflood, lat, lon, alltime)
